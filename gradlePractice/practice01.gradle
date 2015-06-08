@@ -1,0 +1,48 @@
+task configTask00(description: "...", group: "Config"){/*config closure*/ }
+task configTask01(description: "...", group: "Config") << { println 'the doLast' }
+task configTask02{ description "..."; group 'Config'; doFirst{} }
+
+task depend00{ dependsOn 'configTask02' }
+task depend01{ shouldRunAfter 'depend00' }
+task depend02{ shouldRunAfter 'depend01' }
+task depend03{ dependsOn = ['depend00', 'depend02'] }
+task depend04{ dependsOn tasks.matching{ task -> task.name.startsWith("config"); } }
+task depend05{ mustRunAfter 'depend04'; finalizedBy 'configTask00' }
+
+task Cop(type: Copy){ from 'src/images'; into 'build/allImages'; exclude '*.png' }
+task Del(type: Delete){ delete 'src/images'}
+task Zi(type: Zip){
+	destinationDir = file('destinationDir')
+	baseName = 'myZipFile'
+	into 'zippedImageFolder'
+	from('images'){ include '*.jpg'; exclude 'backupJpgs/**'; into 'jpgs' }
+// no point of backupJpgs/** since just referencing backupJpgs would have the same funcitonality
+	from('images'){ include '*.png'; into 'pngs' }
+}
+task Unzi(type: Copy){
+	dependsOn 'Zi'
+	from zipTree('destinationDir/myZipFile.zip')
+	into 'destinationDir/unZippedFolder'
+}
+
+// incremental builds state that if a file is unmodified, then it is not built and is seen as UP-TO-DATE, however modifiying a file, no matter what the dependencies will cause the gradle to build it again, while leaving unmodified files up to date
+
+task param00{ println varDefineInProperties }
+//task param01{ println varFromCmdLine }
+// or from the cmd line: gradle -P varFromCmdLine="var from cmd" param01
+ext{ varFromExt = "external variable but local to the project, but remember to put it above in build scope" }
+task param02{ println varFromExt }
+
+class MyTask extends DefaultTask{
+	String var
+	// annotated methods will run when the task is set
+	@TaskAction
+	void methodName(){ println "hello, $var" }
+	static void methodToBeCalled(){ println "called first" }
+}
+
+task myTaskTask(type: MyTask){
+	var = "called second" // var is configured in this config closure
+	//then task will run
+	doFirst{ methodToBeCalled() } // called first when compared with the annotated method
+}
