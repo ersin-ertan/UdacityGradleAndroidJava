@@ -1,0 +1,36 @@
+// ------------------------- Task Creation-------------------------
+
+task t00{} // config closure
+task t01 << {} // direct to the do last
+task t02(group: 'tGroup', description: 'tasks for practice'){}// using parameters as configuration
+task t03{}
+
+
+// ------------------------- MultiProject -------------------------
+
+allprojects{// in a  multi project tree, you can assign/define tasks to all
+	task hello << { task -> println "my name is $task.project.name" }
+}
+subprojects{
+	hello << { println "- i am a sub project" }
+}
+// project(':nameOfSub').hello << {println "targeted task"} // might not run due to no sub projects
+// thus in the settings.gradle the file would be: include 'subproj01',  'nameOfSub'
+// multi project builds can also filter by name/properties
+// important: allprojects, subprojects, evaluationDependsOn,
+// evaluationDependsOnChildren and project lib dependencies
+
+
+// ------------------------- Dependencies -------------------------
+
+// remember that if you put the println's in the configuration closure
+// that depedenencies have yet to be set so the results may be out of order
+// than that of the doLast, which has the dependencies ordering configured
+task d00 << { println 'd00' }
+task d01(dependsOn: 'd00'){ doLast{ println 'd01' } } // depends on works as param
+task d03(dependsOn: ['d02', 'd01', 'd00', 'd04']) << { println 'd03' }
+task d02{ finalizedBy 'd00'; doLast{ println 'd02' } } // can't be param
+task d04(){ mustRunAfter 'd00'; doLast{ println 'd04' } } // no such thing as mustRunBefore, can't be param
+
+
+// ------------------------- Next -------------------------
