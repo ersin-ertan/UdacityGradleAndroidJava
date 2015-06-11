@@ -5,7 +5,6 @@ task t01 << {} // direct to the do last
 task t02(group: 'tGroup', description: 'tasks for practice'){}// using parameters as configuration
 task t03{}
 
-
 // ------------------------- MultiProject -------------------------
 
 allprojects{// in a  multi project tree, you can assign/define tasks to all
@@ -20,17 +19,45 @@ subprojects{
 // important: allprojects, subprojects, evaluationDependsOn,
 // evaluationDependsOnChildren and project lib dependencies
 
-
 // ------------------------- Dependencies -------------------------
 
 // remember that if you put the println's in the configuration closure
-// that depedenencies have yet to be set so the results may be out of order
+// that dependencies have yet to be set so the results may be out of order
 // than that of the doLast, which has the dependencies ordering configured
 task d00 << { println 'd00' }
 task d01(dependsOn: 'd00'){ doLast{ println 'd01' } } // depends on works as param
 task d03(dependsOn: ['d02', 'd01', 'd00', 'd04']) << { println 'd03' }
 task d02{ finalizedBy 'd00'; doLast{ println 'd02' } } // can't be param
-task d04(){ mustRunAfter 'd00'; doLast{ println 'd04' } } // no such thing as mustRunBefore, can't be param
+task d04(){
+	mustRunAfter 'd00'; doLast{ println 'd04' }
+} // no such thing as mustRunBefore, can't be param
 
+// ------------------------- FileSystem -------------------------
 
-// ------------------------- Next -------------------------
+ext{ fileToDeleteD1 = 'd1' }
+// task executions not part of configuration, and initialization
+task newZip(group: 'FileSystem', type: Zip, dependsOn: 'newFolder'){} // {} are optional, but will get overridden by later definitions
+task newUnpack(group: 'FileSystem', type: Copy, dependsOn: 'newZip')
+task newFolder(group: 'FileSystem', type: Copy)
+task newDelete(group: 'FileSystem', type: Delete, dependsOn: 'newFolder')
+
+// undefined directories for from and destinationDir will be relative to root of containing dir
+newZip{
+	// syntax of destination = file(), destination file(), destination = file '' do the same thing
+	from('gPrac'){ exclude 'd1/d1.doc' }; destinationDir file('gPracZip'); baseName 'ZipTask';
+}
+newUnpack{ from zipTree('gPracZip/ZipTask.zip'); into 'gPracUnpack'; }
+newFolder{
+	// ** just tried to do newFolder.doLast{logic} but didn't work, doLast vs the configuration closure(works)
+	from 'src/docs'; // /docs/ will take the folders and files, so will docs without the /
+	from('src/images/jpg'){ include '*.jpg'; into 'images/jpg' };
+	into 'gPrac' // keep root of the folder at the last into and sub folders defined per use case
+} // excluding large files
+newDelete{
+	def varD2 = fileToDeleteD2;
+	def varD3 = "hello";
+	delete "gPrac/$fileToDeleteD1"; delete('gPrac/' + varD2); // d2 defined in gradle.properties
+	println varD2 + " " + varD3;
+	// did not work because fileToDeleteD2 = 'd2' which was taken literally as the 'd2' parameter, we needed d2
+} // 'gPrac/$fileToDeleteD1' will take the whole statement literally(does not work)
+
