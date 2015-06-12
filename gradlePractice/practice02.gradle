@@ -1,3 +1,6 @@
+// gradle -b someOtherBuild.gradle taskName
+// gradle -b someOtherBuild.gradle --debug taskName | grep 'word your looking for"
+
 // ------------------------- Task Creation-------------------------
 
 task t00{} // config closure
@@ -36,7 +39,8 @@ task d04(){
 
 ext{ fileToDeleteD1 = 'd1' }
 // task executions not part of configuration, and initialization
-task newZip(group: 'FileSystem', type: Zip, dependsOn: 'newFolder'){} // {} are optional, but will get overridden by later definitions
+task newZip(group: 'FileSystem', type: Zip, dependsOn: 'newFolder'){
+} // {} are optional, but will get overridden by later definitions
 task newUnpack(group: 'FileSystem', type: Copy, dependsOn: 'newZip')
 task newFolder(group: 'FileSystem', type: Copy)
 task newDelete(group: 'FileSystem', type: Delete, dependsOn: 'newFolder')
@@ -61,3 +65,53 @@ newDelete{
 	// did not work because fileToDeleteD2 = 'd2' which was taken literally as the 'd2' parameter, we needed d2
 } // 'gPrac/$fileToDeleteD1' will take the whole statement literally(does not work)
 
+// ------------------------- Custom Tasks -------------------------
+
+class CTask extends DefaultTask{ // or Copy,Zip,Delete
+	def one = 1
+	def two
+	def meth1(){ println 'meth1'+" the value of one is "+ one }
+	def callMe(){ println two }
+	{ group 'Custom Tasks' }
+	@Override
+	void setDescription(final String description){
+		super.setDescription(description + " Customized")
+	}
+	@TaskAction
+	void someMethod(){}
+}
+
+task newTask1(type: CTask){ one 2 }
+newTask1{one 2.5}
+newTask1.meth1()
+newTask1.description 'I am'
+
+// delegates are used on closures to assign the attributes in the closures to that of the field in the class
+// defined as relying on another entity for the definition and functions
+def newClosure = {
+	one 3;
+	// meth1(){ println 'methFromClo'+" the value of one is"+ one }; // innermethods are not supported
+	meth1()
+	two "call me from closure"; callMe();
+}
+newClosure.delegate = newTask1
+newClosure()
+newClosure.one 4
+newClosure.meth1()
+
+
+// ------------------------- Logging and Lifecycle -------------------------
+
+task hello(type: HelloTask)
+class HelloTask extends DefaultTask{
+	@TaskAction
+	void someAction(){
+		logger.info 'info'
+		logger.lifecycle 'lifecycle'
+		logger.info 'end info, placed after lifecycle'
+	}
+}
+logger.quiet 'quiet'
+// logging levels [[[[error and quiet -q]warning and lifecycle(default)] info -i] debug -d]
+// gradle --stacktrace or -s
+// gradle -S for full stack trance
