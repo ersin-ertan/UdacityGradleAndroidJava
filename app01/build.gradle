@@ -1,0 +1,41 @@
+apply plugin: 'com.android.application'
+
+android{
+	compileSdkVersion 22
+	buildToolsVersion "22.0.1"
+
+	defaultConfig{
+		applicationId "com.nullcognition.udacitygradleandroidjava"
+		minSdkVersion 22
+		targetSdkVersion 22
+		versionCode 1
+		versionName "1.0"
+	}
+	buildTypes{
+		release{
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+		}
+	}
+
+	// different application ids is for debugging, both apps installable on one device,
+	productFlavors{
+		free{
+			applicationId 'com.nullcognition.udacitygradleandroidjava.free'
+		}
+		paid{
+			applicationId 'com.nullcognition.udacitygradleandroidjava.paid'
+		}
+	}
+}
+
+dependencies{
+	compile fileTree(dir: 'libs', include: ['*.jar'])
+	// based on the product flavors, the compile versions can depend on different things
+	freeCompile 'com.google.android.gms:play-services-ads:7.0.0' // only appears on this version
+	// if your paid version had more implementations / supported newer features then you could depend on the latest of packages
+
+	// added the new library module
+	compile project(":javalibrary01")
+	compile project(":androidlibrary01")
+}
