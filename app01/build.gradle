@@ -35,7 +35,7 @@ dependencies{
 	freeCompile 'com.google.android.gms:play-services-ads:7.0.0' // only appears on this version
 	// if your paid version had more implementations / supported newer features then you could depend on the latest of packages
 
-	// added the new library module
+	// added the new library module, there was an add as library button on library click(not sure if, button depends on if added)
 	compile project(":javalibrary01")
 	compile project(":androidlibrary01")
 }

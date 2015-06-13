@@ -1,0 +1,46 @@
+def c = {
+	i = 1
+	meth(){ println "Closure c meth() - my i" + i }
+}
+task task00(type: DefaultTask, group: 'P03'){}
+
+task00{
+	logger.info("logger.info") // not shown, use gradle -b practice03.gradle --info task00 | grep 'logger.info' will only show: logger.info
+	logger.debug("logger.debug") // not shown, use  gradle -b practice03.gradle --debug task00 | grep 'logger.debug' will show:
+	// 18:20:02.976 [DEBUG] [org.gradle.api.Task] logger.debug
+
+	logger.lifecycle("logger.lifecycle")
+	logger.quiet("logger.quiet")
+
+	def i = 3
+//def meth(){println i}// inner methods are not supported
+	// Task01 task01 = new Task01()
+	// Task of type 'Task01' has been instantiated directly which is not supported. Tasks can only be created using the DSL.
+	task task01(type: Task01, group: 'P03'){ println("task01 configuration meth() - " + meth()) } // this is null
+
+	task01.doLast{ // taskAction is being called before this
+		i = 5; // this i is altering the local scope not that of the task01
+		task01.i = 0.5
+		println " from task01.doLast - task01.meth():" + task01.meth() // null
+		println " from task01.doLast - task01.taskAction: ${task01.task01TaskAction()}" // must have () // null
+	}
+	// c.delegate = task01 // must be equals sign // done in the configuration phase, try moving to do last, incase config of c.delegate is conflicting with the task01 config
+	doLast{
+		c.delegate = task01
+		println "task00.doLast{} - my i:$i, " +
+			" my c.meth(): ${c.meth()}," + // need to use c.meth() not c.meth, and is null
+				" my c.i:$c.i," +
+				" task01.i:$task01.i, " +
+				"my c.meth(): ${c.meth()} " + // null
+				"task01.meth:${task01.meth()}"; // null
+	// find where the 3 Task01.meth() with 0 are being called
+	}
+}
+
+class Task01 extends DefaultTask{
+	def i = 0
+	def meth(){ println "Task01.meth() - my i:" + i }
+	@TaskAction
+	void task01TaskAction(){ println " - - - - - Task01TaskAction()"}
+}
+
